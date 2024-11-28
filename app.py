@@ -5,6 +5,7 @@ from color import convert_to_grayscale
 from threshold import apply_threshold
 from simple_edge_detection import edge_detection as simple_edge_detection
 from utils import reset_image
+from halftone import apply_halftone
 
 class ImageProcessingApp:
     def __init__(self, root):
@@ -49,6 +50,10 @@ class ImageProcessingApp:
         self.hist_eq_btn = Button(self.button_frame, text="Histogram Equalization", command=self.histogram_equalization,
                                   bg="#3498DB", fg="white", font=("Arial", 12))
         self.hist_eq_btn.pack(pady=5, fill="x")
+
+        self.halftone_btn = Button(self.button_frame, text="Halftone", command=self.apply_halftone,
+                                   bg="#3498DB", fg="white", font=("Arial", 12))
+        self.halftone_btn.pack(pady=5, fill="x")
 
         # Edge Detection buttons
         self.edge_detection_btn = Button(self.button_frame, text="Edge Detection (Sobel)",
@@ -108,6 +113,17 @@ class ImageProcessingApp:
             self.image = apply_histogram_equalization(self.image)
             self.display_image = ImageTk.PhotoImage(self.image)
             self.image_label.config(image=self.display_image)
+
+    def apply_halftone(self):
+        if self.image:
+            try:
+                self.image = apply_halftone(self.image)
+                self.display_image = ImageTk.PhotoImage(self.image)
+                self.image_label.config(image=self.display_image)
+            except Exception as e:
+                print(f"Failed to apply halftone: {str(e)}")
+        else:
+            print("Please upload an image first")
 
     def reset_image(self):
         if hasattr(self, 'original_image') and self.original_image:
