@@ -1,4 +1,4 @@
-# Image-Processing-Tool
+# Image Processing Tool
 
 ## Overview
 This project is a Python-based Image Processing Tool featuring a Graphical User Interface (GUI). It implements fundamental and advanced image processing operations from scratch, without relying on library functions for complete solutions.
