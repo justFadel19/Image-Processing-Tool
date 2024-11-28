@@ -67,7 +67,7 @@ The tool is designed for educational purposes, providing insights into the under
 
 ## Project Structure
 ```bash
-Image-Processing-Tool/
+image-processing-tool/
 │
 ├── app.py                 
 ├── processing/
