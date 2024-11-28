@@ -1,11 +1,11 @@
 from tkinter import Tk, Button, Label, filedialog, Frame
 from PIL import Image, ImageTk
-from histogram import apply_histogram, apply_histogram_equalization  # Importing the functions
-from color import convert_to_grayscale
-from threshold import apply_threshold
-from simple_edge_detection import edge_detection as simple_edge_detection
-from utils import reset_image
-from halftone import apply_halftone
+from processing.histogram import apply_histogram, apply_histogram_equalization
+from processing.color import convert_to_grayscale
+from processing.threshold import apply_threshold
+from processing.simple_edge_detection import edge_detection as simple_edge_detection
+from processing.utils import reset_image
+from processing.halftone import apply_halftone
 
 class ImageProcessingApp:
     def __init__(self, root):
