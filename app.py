@@ -1,4 +1,4 @@
-from tkinter import Tk, Button, Label, filedialog, Frame
+from tkinter import Tk, Button, Label, filedialog, Frame, messagebox
 from PIL import Image, ImageTk
 from processing.histogram import apply_histogram, apply_histogram_equalization
 from processing.color import convert_to_grayscale
@@ -24,6 +24,16 @@ class ImageProcessingApp:
 
         self.image_label = Label(self.image_frame, bg="#34495E")
         self.image_label.pack(expand=True, fill="both")
+
+        # Frame for save button (left side)
+        self.save_frame = Frame(root, bg="#2C3E50")
+        self.save_frame.place(x=50, y=460, width=500, height=50)
+
+        # Save image button
+        self.save_btn = Button(self.save_frame, text="Save Image", command=self.save_image,
+                              bg="#27AE60", fg="white", font=("Arial", 14, "bold"),
+                              width=20, height=2)  # Increased width, height, and font size
+        self.save_btn.pack(pady=5, padx=150)  # Reduced padx to accommodate larger button
 
         # Frame for the buttons
         self.button_frame = Frame(root, bg="#1ABC9C")
@@ -95,14 +105,12 @@ class ImageProcessingApp:
     def convert_to_grayscale(self):
         if self.image:
             self.image = convert_to_grayscale(self.image)
-            self.display_image = ImageTk.PhotoImage(self.image)
-            self.image_label.config(image=self.display_image)
+            self.update_display()
 
     def apply_threshold(self):
         if self.image:
             self.image = apply_threshold(self.image)
-            self.display_image = ImageTk.PhotoImage(self.image)
-            self.image_label.config(image=self.display_image)
+            self.update_display()
 
     def apply_histogram(self):
         if self.image:
@@ -111,15 +119,13 @@ class ImageProcessingApp:
     def histogram_equalization(self):
         if self.image:
             self.image = apply_histogram_equalization(self.image)
-            self.display_image = ImageTk.PhotoImage(self.image)
-            self.image_label.config(image=self.display_image)
+            self.update_display()
 
     def apply_halftone(self):
         if self.image:
             try:
                 self.image = apply_halftone(self.image)
-                self.display_image = ImageTk.PhotoImage(self.image)
-                self.image_label.config(image=self.display_image)
+                self.update_display()
             except Exception as e:
                 print(f"Failed to apply halftone: {str(e)}")
         else:
@@ -133,14 +139,36 @@ class ImageProcessingApp:
             max_width, max_height = 500, 500
             self.image.thumbnail((max_width, max_height))
             
-            self.display_image = ImageTk.PhotoImage(self.image)
-            self.image_label.config(image=self.display_image)
+            self.update_display()
 
     def edge_detection(self, method="sobel"):
         if self.image:
             self.image = simple_edge_detection(self.image, method)
-            self.display_image = ImageTk.PhotoImage(self.image)
-            self.image_label.config(image=self.display_image)
+            self.update_display()
+
+    def save_image(self):
+        if self.image:
+            file_types = [
+                ('PNG files', '*.png'),
+                ('JPEG files', '*.jpg;*.jpeg'),
+                ('All files', '*.*')
+            ]
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".png",
+                filetypes=file_types,
+                title="Save Image As"
+            )
+            if file_path:
+                try:
+                    self.image.save(file_path)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save image: {str(e)}")
+        else:
+            messagebox.showwarning("Warning", "No image to save!")
+
+    def update_display(self):
+        self.display_image = ImageTk.PhotoImage(self.image)
+        self.image_label.config(image=self.display_image)
 
 if __name__ == "__main__":
     root = Tk()
