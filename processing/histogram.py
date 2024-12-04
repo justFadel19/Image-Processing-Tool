@@ -2,56 +2,53 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
-def apply_histogram(image):
+
+def show_histogram(image):
     # Convert image to grayscale if it isn't already
+    if image.mode != "L":
+        image = image.convert("L")
+
+    # Get image data as numpy array
+    img_array = np.array(image)
+
+    flat = img_array.flatten()  # Flatten the image to 1D for histogram computation
+    
+    # Compute the histogram
+    hist, bins = np.histogram(flat, bins=256, range=[0, 256], density=False)
+
+    # Create a new figure
+    plt.figure(figsize=(8, 6))
+    plt.bar(range(256), hist, color='gray', alpha=0.7)
+    plt.title("Image Histogram")
+    plt.xlabel("Pixel Value")
+    plt.ylabel("Frequency")
+    plt.grid(True, alpha=0.3)
+
+    # Show the plot
+    plt.show()
+
+    return image
+
+
+def histogram_equalization(image):
+    # Convert the image to grayscale if not already
     if image.mode != 'L':
         image = image.convert('L')
     
     # Get image data as numpy array
     img_array = np.array(image)
     
-    # Calculate histogram
-    histogram = np.histogram(img_array, bins=256, range=(0, 256))[0]
+    flat = img_array.flatten()  # Flatten the image to 1D for histogram computation
     
-    # Create a new figure
-    plt.figure(figsize=(8, 6))
-    plt.title('Image Histogram')
-    plt.xlabel('Pixel Value')
-    plt.ylabel('Frequency')
+    # Compute the histogram
+    hist, bins = np.histogram(flat, bins=256, range=[0, 256], density=True)
     
-    # Plot histogram
-    plt.plot(histogram)
-    plt.grid(True)
+    # Compute the CDF (Cumulative Distribution Function)
+    cdf = hist.cumsum()  # Cumulative sum of histogram values
+    cdf_normalized = cdf * (255 / cdf[-1])  # Normalize to range [0, 255]
     
-    # Show the plot
-    plt.show()
+    # Apply the equalization transformation
+    equalized_img_array = np.interp(flat, bins[:-1], cdf_normalized).reshape(img_array.shape)
     
-    return image
-
-def apply_histogram_equalization(image):
-    # Convert image to grayscale if it isn't already
-    if image.mode != 'L':
-        image = image.convert('L')
-    
-    # Convert image to numpy array
-    img_array = np.array(image)
-    
-    # Calculate histogram
-    histogram = np.histogram(img_array, bins=256, range=(0, 256))[0]
-    
-    # Calculate cumulative distribution function (CDF)
-    cdf = histogram.cumsum()
-    
-    # Normalize CDF
-    cdf_normalized = cdf * float(histogram.max()) / cdf.max()
-    
-    # Create lookup table
-    lookup_table = np.interp(range(256), range(256), cdf_normalized)
-    
-    # Apply lookup table to image
-    equalized_array = lookup_table[img_array]
-    
-    # Convert back to PIL Image
-    equalized_image = Image.fromarray(np.uint8(equalized_array))
-    
-    return equalized_image
+    # Convert back to an image
+    return Image.fromarray(equalized_img_array.astype(np.uint8))
