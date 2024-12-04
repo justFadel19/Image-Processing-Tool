@@ -61,7 +61,7 @@ class ImageProcessingApp:
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
         help_menu.add_command(label="About", command=self.show_about)
-        help_menu.add_command(label="Theory", command=self.show_theory)
+        help_menu.add_command(label="Last Operation Theory", command=self.show_theory)
 
     def create_frames(self):
         # Create main container
@@ -238,7 +238,135 @@ class ImageProcessingApp:
         self.image = None
         self.original_image = None
         self.processed_image = None
-        self.theory_answers = []
+        self.last_operation = None  # Track the last operation performed
+        # Dictionary mapping operations to their theory
+        self.theory_map = {
+            convert_to_grayscale: """Grayscale Conversion:
+Converts a color image to black and white by:
+- Taking the red, green, and blue colors
+- Mixing them with specific weights (59% green, 30% red, 11% blue)
+- Creating a single gray value""",
+
+            calculate_threshold: """Thresholding:
+Makes a black and white image by:
+- Choosing a threshold value
+- Making pixels brighter than threshold white
+- Making pixels darker than threshold black""",
+
+            simple_halftone: """Simple Halftoning:
+Creates a newspaper-like effect by:
+- Breaking image into small squares
+- Making each square either black or white
+- Creating the illusion of gray shades""",
+
+            error_diffusion_halftoning: """Error Diffusion Halftoning:
+An advanced newspaper-like effect that:
+- Processes image pixel by pixel
+- Spreads errors to nearby pixels
+- Creates smoother patterns than simple halftoning""",
+
+            show_histogram: """Histogram:
+Shows how bright or dark an image is by:
+- Counting pixels of each brightness level
+- Showing results in a graph
+- Helping analyze image quality""",
+
+            histogram_equalization: """Histogram Equalization:
+Improves image contrast by:
+- Finding dark and bright areas
+- Spreading out the brightness levels
+- Making details more visible""",
+
+            apply_sobel: """Sobel Edge Detection:
+Finds edges in images by:
+- Looking at how quickly brightness changes
+- Finding vertical and horizontal edges
+- Combining them into a complete edge image""",
+
+            apply_prewitt: """Prewitt Edge Detection:
+Similar to Sobel but simpler:
+- Finds vertical and horizontal edges
+- Less sensitive to small details
+- Good for finding strong edges""",
+
+            apply_kirsch: """Kirsch Edge Detection:
+Finds edges in all directions:
+- Checks 8 different directions
+- Picks the strongest edge
+- Good for finding detailed edges""",
+
+            homogeneity_operator: """Homogeneity Edge Detection:
+Finds edges by:
+- Comparing each pixel to its neighbors
+- Finding areas where pixels are different
+- Marking these areas as edges""",
+
+            difference_operator: """Difference Edge Detection:
+A simple way to find edges:
+- Finds brightest and darkest nearby pixels
+- Calculates their difference
+- Large differences mean edges""",
+
+            difference_of_gaussians: """Difference of Gaussians:
+Finds edges by:
+- Blurring image two different amounts
+- Subtracting the blurred images
+- Finding where they differ most""",
+
+            contrast_based_edge_detection: """Contrast Edge Detection:
+Finds edges where:
+- Bright and dark areas meet
+- Contrast changes significantly
+- Local differences are high""",
+
+            variance_operator: """Variance Edge Detection:
+Finds edges where:
+- Pixel values vary a lot
+- Local area has high variation
+- Changes are significant""",
+
+            range_operator: """Range Edge Detection:
+Simple edge detection that:
+- Finds highest and lowest values nearby
+- Calculates their range
+- Marks high ranges as edges""",
+
+            apply_highpass: """High Pass Filter:
+Makes edges stand out by:
+- Keeping sharp details
+- Removing smooth areas
+- Making edges more visible""",
+
+            apply_lowpass: """Low Pass Filter:
+Smooths the image by:
+- Blurring sharp details
+- Averaging nearby pixels
+- Reducing noise""",
+
+            apply_median: """Median Filter:
+Removes noise while keeping edges:
+- Sorts nearby pixels by brightness
+- Takes the middle value
+- Replaces noisy pixels""",
+
+            invert_image: """Image Inversion:
+Creates a negative by:
+- Making dark areas bright
+- Making bright areas dark
+- Reversing all colors""",
+
+            add_image_and_copy: """Image Addition:
+Combines two images by:
+- Adding their brightness values
+- Making result brighter
+- Useful for blending images""",
+
+            subtract_image_and_copy: """Image Subtraction:
+Shows differences between images by:
+- Subtracting brightness values
+- Showing what changed
+- Useful for finding differences"""
+        }
 
     def save_image(self):
         if self.processed_image:
@@ -326,6 +454,9 @@ Created for educational purposes."""
                 self.status_var.set(f"Processing image...")
                 self.root.update()
                 
+                # Store the last operation performed
+                self.last_operation = operation
+                
                 result = operation(self.processed_image)
                 
                 if isinstance(result, Image.Image):
@@ -339,13 +470,15 @@ Created for educational purposes."""
                 messagebox.showerror("Error", f"Failed to process image: {str(e)}")
 
     def show_theory(self):
-        if not self.theory_answers:
-            messagebox.showinfo("Theory", "No theory content available yet.")
+        # If no operation has been performed yet
+        if self.last_operation is None:
+            messagebox.showinfo("Theory", "No operation has been performed yet.")
             return
             
+        # Create theory window
         theory_window = Toplevel(self.root)
-        theory_window.title("Image Processing Theory")
-        theory_window.geometry("600x400")
+        theory_window.title("Last Operation Theory")
+        theory_window.geometry("400x300")
         
         # Create a scrolled text widget
         text_widget = tk.Text(theory_window, wrap=tk.WORD, padx=10, pady=10)
@@ -356,9 +489,14 @@ Created for educational purposes."""
         scrollbar.pack(side="right", fill="y")
         text_widget.pack(side="left", fill="both", expand=True)
         
+        # Get theory for last operation
+        if self.last_operation in self.theory_map:
+            theory_text = self.theory_map[self.last_operation]
+        else:
+            theory_text = "No theory available for this operation."
+        
         # Insert theory content
-        for answer in self.theory_answers:
-            text_widget.insert(tk.END, answer + "\n\n")
+        text_widget.insert(tk.END, theory_text)
         text_widget.configure(state="disabled")
 
 if __name__ == "__main__":
