@@ -1,36 +1,52 @@
-from PIL import Image
 import numpy as np
+from PIL import Image
 
-def apply_halftone(image, sample_size=2):
-    # Convert to grayscale
-    grayscale = image.convert("L")
-    width, height = grayscale.size
+def simple_halftone(image):
+    # Convert image to grayscale if it isn't already
+    if image.mode != 'L':
+        image = image.convert('L')
     
-    # Create output image with doubled dimensions for dots
-    out_width = width * 2
-    out_height = height * 2
-    output_image = Image.new('L', (out_width, out_height), 255)
+    # Convert to array and calculate threshold
+    img_array = np.array(image)
+    threshold_value = np.mean(img_array)
     
-    # Get pixel data
-    pixels = np.array(grayscale)
-    
-    # Process each block
-    for y in range(0, height, sample_size):
-        for x in range(0, width, sample_size):
-            # Get the average value of the block
-            block = pixels[y:min(y+sample_size, height), x:min(x+sample_size, width)]
-            avg = np.mean(block)
-            
-            # Calculate dot size (0-255 -> 0-sample_size)
-            dot_size = int((255 - avg) * sample_size / 255)
-            
-            if dot_size > 0:
-                # Draw black dot
-                for dy in range(dot_size):
-                    for dx in range(dot_size):
-                        out_x = (x * 2) + dx
-                        out_y = (y * 2) + dy
-                        if out_x < out_width and out_y < out_height:
-                            output_image.putpixel((out_x, out_y), 0)
-    
-    return output_image
+    # Apply threshold
+    halftone_array = np.where(img_array > threshold_value, 255, 0).astype(np.uint8)
+    return Image.fromarray(halftone_array)
+
+def error_diffusion_halftoning(image, threshold=128):
+    # Convert image to grayscale if it isn't already
+    if image.mode != 'L':
+        image = image.convert('L')
+
+    # Convert the image into a NumPy array
+    img_array = np.array(image, dtype=np.float32)  # Use float to handle errors
+
+    # Get dimensions of the image
+    height, width = img_array.shape
+
+    # Process each pixel in the image
+    for y in range(height):
+        for x in range(width):
+            old_pixel = img_array[y, x]
+            new_pixel = 255 if old_pixel >= threshold else 0  # Thresholding
+            img_array[y, x] = new_pixel  # Update the pixel
+
+            # Calculate the error
+            error = old_pixel - new_pixel
+
+            # Propagate the error to neighbors (Floyd-Steinberg)
+            if x + 1 < width:
+                img_array[y, x + 1] += error * 7 / 16
+            if y + 1 < height and x > 0:
+                img_array[y + 1, x - 1] += error * 3 / 16
+            if y + 1 < height:
+                img_array[y + 1, x] += error * 5 / 16
+            if y + 1 < height and x + 1 < width:
+                img_array[y + 1, x + 1] += error * 1 / 16
+
+    # Clip values to be between 0 and 255
+    img_array = np.clip(img_array, 0, 255)
+
+    # Convert back to a PIL image and return
+    return Image.fromarray(img_array.astype(np.uint8))
