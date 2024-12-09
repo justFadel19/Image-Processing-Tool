@@ -9,67 +9,93 @@ def normalize_output(image_array):
         return np.zeros_like(image_array, dtype=np.uint8)
     return np.uint8(255 * (image_array - min_val) / (max_val - min_val))
 
-def apply_window_operation(image, kernel_size, operation):
-    """Apply a window operation with proper padding"""
+def homogeneity_operator(image):
+    """
+    Apply the Homogeneity Operator for edge detection.
+    
+    Args:
+        image (PIL.Image.Image): The input grayscale image.
+    
+    Returns:
+        PIL.Image.Image: The edge-detected image.
+    """
     if image.mode != 'L':
         image = image.convert('L')
     
-    # Convert to array
-    image_array = np.array(image, dtype=np.float32)
-    height, width = image_array.shape
-    pad = kernel_size // 2
-    
-    # Create padded image
-    padded = np.pad(image_array, ((pad, pad), (pad, pad)), mode='reflect')
-    
-    # Output array
-    output = np.zeros((height, width), dtype=np.float32)
-    
-    # Apply operation to each window
-    for i in range(height):
-        for j in range(width):
-            window = padded[i:i + kernel_size, j:j + kernel_size]
-            output[i, j] = operation(window)
-    
-    return normalize_output(output)
+    width, height = image.size
+    img_array = np.array(image, dtype=np.float32)
 
-def homogeneity_operator(image, kernel_size=3):
-    """Edge detection based on intensity range in local window"""
-    def homogeneity_op(window):
-        return np.max(window) - np.min(window)
-    
-    output = apply_window_operation(image, kernel_size, homogeneity_op)
-    return Image.fromarray(output)
+    # Prepare an array for the output
+    edge_img = np.zeros_like(img_array)
+
+    # Define the neighbor offsets
+    neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+
+    # Apply the homogeneity operator
+    for y in range(1, height - 1):
+        for x in range(1, width - 1):
+            pixel = img_array[y, x]
+            differences = [abs(pixel - img_array[y + dy, x + dx]) for dx, dy in neighbors]
+            edge_img[y, x] = max(differences)
+
+    # Normalize the output to 0-255 range
+    edge_img = normalize_output(edge_img)
+
+    return Image.fromarray(edge_img)
 
 def difference_operator(image):
-    """Simple horizontal and vertical difference operator"""
+    """
+    Apply the Difference Operator for edge detection.
+    
+    Args:
+        image (PIL.Image.Image): The input grayscale image.
+    
+    Returns:
+        PIL.Image.Image: The edge-detected image.
+    """
     if image.mode != 'L':
         image = image.convert('L')
     
+    width, height = image.size
     img_array = np.array(image, dtype=np.float32)
-    height, width = img_array.shape
-    
-    # Calculate horizontal and vertical differences
-    h_diff = np.zeros_like(img_array)
-    v_diff = np.zeros_like(img_array)
-    
-    # Horizontal differences
-    h_diff[:, :-1] = np.abs(img_array[:, 1:] - img_array[:, :-1])
-    
-    # Vertical differences
-    v_diff[:-1, :] = np.abs(img_array[1:, :] - img_array[:-1, :])
-    
-    # Combine differences
-    output = np.maximum(h_diff, v_diff)
-    
-    return Image.fromarray(normalize_output(output))
+
+    # Prepare an array for the output
+    edge_img = np.zeros_like(img_array)
+
+    # Define the neighbor offsets for horizontal and vertical differences
+    neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    # Apply the difference operator
+    for y in range(1, height-1):
+        for x in range(1, width-1):
+            pixel = img_array[y, x]
+            differences = [abs(pixel - img_array[y + dy, x + dx]) for dx, dy in neighbors]
+            edge_img[y, x] = sum(differences) // len(differences)
+
+    # Normalize the output to 0-255 range
+    edge_img = normalize_output(edge_img)
+
+    return Image.fromarray(edge_img)
 
 def gaussian_kernel(size, sigma):
     """Create a Gaussian kernel"""
-    x = np.linspace(-size//2, size//2, size)
-    x, y = np.meshgrid(x, x)
-    g = np.exp(-(x**2 + y**2)/(2*sigma**2))
-    return g / g.sum()
+    kernel = np.zeros((size, size), dtype=np.float32)
+    center = size // 2
+    sum_val = 0.0
+    
+    for i in range(size):
+        for j in range(size):
+            x = i - center
+            y = j - center
+            kernel[i, j] = np.exp(-(x**2 + y**2) / (2 * sigma**2))
+            sum_val += kernel[i, j]
+    
+    # Normalize the kernel
+    for i in range(size):
+        for j in range(size):
+            kernel[i, j] /= sum_val
+    
+    return kernel
 
 def apply_gaussian(image_array, kernel):
     """Apply Gaussian filter manually"""
@@ -108,24 +134,71 @@ def difference_of_gaussians(image, sigma1=1.0, sigma2=2.0, size=5):
 
 def contrast_based_edge_detection(image, kernel_size=3):
     """Edge detection based on local contrast"""
-    def contrast_op(window):
-        return np.abs(window[kernel_size//2, kernel_size//2] - np.mean(window))
+    if image.mode != 'L':
+        image = image.convert('L')
     
-    output = apply_window_operation(image, kernel_size, contrast_op)
-    return Image.fromarray(output)
+    width, height = image.size
+    img_array = np.array(image, dtype=np.float32)
+    pad = kernel_size // 2
+    
+    # Create padded image
+    padded = np.pad(img_array, ((pad, pad), (pad, pad)), mode='reflect')
+    
+    # Output array
+    output = np.zeros((height, width), dtype=np.float32)
+    
+    # Apply contrast operation
+    for y in range(height):
+        for x in range(width):
+            window = padded[y:y + kernel_size, x:x + kernel_size]
+            center_value = window[pad, pad]
+            mean_value = np.mean(window)
+            output[y, x] = abs(center_value - mean_value)
+    
+    return Image.fromarray(normalize_output(output))
 
 def variance_operator(image, kernel_size=3):
     """Edge detection based on local variance"""
-    def variance_op(window):
-        return np.var(window)
+    if image.mode != 'L':
+        image = image.convert('L')
     
-    output = apply_window_operation(image, kernel_size, variance_op)
-    return Image.fromarray(output)
+    width, height = image.size
+    img_array = np.array(image, dtype=np.float32)
+    pad = kernel_size // 2
+    
+    # Create padded image
+    padded = np.pad(img_array, ((pad, pad), (pad, pad)), mode='reflect')
+    
+    # Output array
+    output = np.zeros((height, width), dtype=np.float32)
+    
+    # Apply variance operation
+    for y in range(height):
+        for x in range(width):
+            window = padded[y:y + kernel_size, x:x + kernel_size]
+            output[y, x] = np.var(window)
+    
+    return Image.fromarray(normalize_output(output))
 
 def range_operator(image, kernel_size=3):
     """Edge detection based on local range of intensities"""
-    def range_op(window):
-        return np.max(window) - np.min(window)
+    if image.mode != 'L':
+        image = image.convert('L')
     
-    output = apply_window_operation(image, kernel_size, range_op)
-    return Image.fromarray(output)
+    width, height = image.size
+    img_array = np.array(image, dtype=np.float32)
+    pad = kernel_size // 2
+    
+    # Create padded image
+    padded = np.pad(img_array, ((pad, pad), (pad, pad)), mode='reflect')
+    
+    # Output array
+    output = np.zeros((height, width), dtype=np.float32)
+    
+    # Apply range operation
+    for y in range(height):
+        for x in range(width):
+            window = padded[y:y + kernel_size, x:x + kernel_size]
+            output[y, x] = np.max(window) - np.min(window)
+    
+    return Image.fromarray(normalize_output(output))
