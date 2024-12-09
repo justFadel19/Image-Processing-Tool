@@ -1,38 +1,39 @@
-import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
 
 def calculate_threshold(image):
+    """
+    Converts an image to grayscale if it isn't already, calculates a global threshold
+    based on the average pixel value, and applies the threshold to create a binary image.
+
+    Args:
+        image (PIL.Image.Image): The input image to be thresholded.
+
+    Returns:
+        PIL.Image.Image: The thresholded binary image.
+    """
+    
     # Convert image to grayscale if it isn't already
     if image.mode != 'L':
         image = image.convert('L')
     
-    # Convert to numpy array
-    img_array = np.array(image)
+    width, height = image.size
     
-    # Calculate average pixel value as threshold
-    threshold = np.mean(img_array)
+    # Calculate the average pixel value (global threshold)
+    pixel_values = [image.getpixel((x, y)) for x in range(width) for y in range(height)]
+    threshold = sum(pixel_values) // len(pixel_values)
+    print(f"Calculated Threshold: {threshold}")
     
-    # Create a figure to display the threshold information
-    plt.figure(figsize=(10, 4))
     
-    # Plot histogram
-    plt.subplot(121)
-    plt.hist(img_array.ravel(), bins=256, range=(0, 256), density=True, color='gray', alpha=0.7)
-    plt.axvline(x=threshold, color='r', linestyle='--', label=f'Threshold = {threshold:.1f}')
-    plt.title('Image Histogram with Threshold')
-    plt.xlabel('Pixel Value')
-    plt.ylabel('Frequency')
-    plt.legend()
-    
-    # Plot threshold line on image
-    plt.subplot(122)
-    plt.imshow(img_array, cmap='gray')
-    plt.title(f'Original Image\nOptimal Threshold = {threshold:.1f}')
-    plt.axis('off')
-    
-    plt.tight_layout()
-    plt.show()
+    # Create a new image for the thresholded result
+    threshold_img = Image.new("L", (width, height))
+
+    # Apply thresholding
+    for x in range(width):
+        for y in range(height):
+            gray = image.getpixel((x, y))
+            # Set pixel to 255 (white) if greater than threshold, else 0 (black)
+            value = 255 if gray > threshold else 0
+            threshold_img.putpixel((x, y), value)
     
     # Return the original image and the calculated threshold
     return image
