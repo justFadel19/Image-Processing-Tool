@@ -45,7 +45,7 @@ The tool is designed for educational purposes, providing insights into the under
   - `Pillow`
   - `matplotlib`
 
-### Steps
+## Steps
 1. Clone the repository:
    ```bash
    git clone https://github.com/<your-username>/Image-Processing-Tool.git
@@ -59,6 +59,23 @@ The tool is designed for educational purposes, providing insights into the under
    ```bash
     python app.py
    ```
+
+## Running the Project with Docker
+
+### Prerequisites
+- **Docker**: Ensure Docker is installed on your machine.
+
+### Steps
+1. Build the Docker image:
+   ```bash
+   docker build -t image-processing-tool .
+   ```
+2. Run the Docker container:
+   ```bash
+   docker run --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -v $(pwd):/app/data image-processing-tool
+   ```
+---
+
 ## Usage
 1. **Launch the tool**.
 2. **Upload an image** using the **Upload Image** button.
