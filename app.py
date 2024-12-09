@@ -11,6 +11,7 @@ from processing.advanced_edge_detection import ( homogeneity_operator, differenc
 from processing.filtering import apply_highpass, apply_lowpass, apply_median
 from processing.image_operations import invert_image, add_image_and_copy, subtract_image_and_copy
 from processing.utils import reset_image
+from processing.histogram_based_segmentation import manual_segmentation, peak_segmentation, valley_segmentation, adaptive_segmentation
 
 class ImageProcessingApp:
     def __init__(self, root):
@@ -207,6 +208,51 @@ class ImageProcessingApp:
             )
             btn.grid(row=0, column=i, padx=2, pady=2)
 
+        # Histogram-based Segmentation Menu
+        segmentation_frame = ttk.LabelFrame(self.buttons_frame, text="Image Segmentation")
+        segmentation_frame.grid(row=row, column=0, padx=5, pady=5, sticky="ew")
+        row += 1
+
+        # Function to handle manual segmentation with threshold input
+        def manual_segment_dialog():
+            dialog = Toplevel(self.root)
+            dialog.title("Manual Segmentation")
+            dialog.geometry("300x100")
+            
+            Label(dialog, text="Enter threshold value (0-255):").pack(pady=5)
+            threshold_var = tk.StringVar(value="128")
+            entry = ttk.Entry(dialog, textvariable=threshold_var)
+            entry.pack(pady=5)
+            
+            def apply():
+                try:
+                    threshold = int(threshold_var.get())
+                    if 0 <= threshold <= 255:
+                        self.process_image(lambda img: manual_segmentation(img, threshold))
+                        dialog.destroy()
+                    else:
+                        messagebox.showerror("Error", "Threshold must be between 0 and 255")
+                except ValueError:
+                    messagebox.showerror("Error", "Please enter a valid number")
+            
+            ttk.Button(dialog, text="Apply", command=apply).pack(pady=5)
+
+        segmentation_ops = [
+            ("Manual", manual_segment_dialog),
+            ("Peak", lambda: self.process_image(peak_segmentation)),
+            ("Valley", lambda: self.process_image(valley_segmentation)),
+            ("Adaptive", lambda: self.process_image(lambda img: adaptive_segmentation(img, block_size=16)))
+        ]
+
+        # Create segmentation buttons in a grid
+        for i, (text, func) in enumerate(segmentation_ops):
+            btn = ttk.Button(
+                segmentation_frame, text=text,
+                command=func,
+                state=tk.DISABLED
+            )
+            btn.grid(row=i//2, column=i%2, padx=2, pady=2)
+
         # Image Operations Menu
         img_ops_frame = ttk.LabelFrame(self.buttons_frame, text="Image Operations")
         img_ops_frame.grid(row=row, column=0, padx=5, pady=5, sticky="ew")
@@ -365,7 +411,28 @@ Combines two images by:
 Shows differences between images by:
 - Subtracting brightness values
 - Showing what changed
-- Useful for finding differences"""
+- Useful for finding differences""",
+            
+            manual_segmentation: """Manual Segmentation:
+Divides an image into segments by:
+- Choosing a threshold value
+- Making pixels brighter than threshold white
+- Making pixels darker than threshold black""",
+
+            peak_segmentation: """Peak Segmentation:
+Divides an image into segments by:
+- Finding peaks in the histogram
+- Using these peaks as thresholds""",
+
+            valley_segmentation: """Valley Segmentation:
+Divides an image into segments by:
+- Finding valleys in the histogram
+- Using these valleys as thresholds""",
+
+            adaptive_segmentation: """Adaptive Segmentation:
+Divides an image into segments by:
+- Analyzing the local area around each pixel
+- Adjusting the threshold based on the local area"""
         }
 
     def save_image(self):
