@@ -96,8 +96,7 @@ image-processing-tool/
 │   ├── advanced_edge_detection.py
 │   ├── filtering.py
 │   ├── image_operations.py       
-│   ├── segmentation.py     
-│   └── utils.py            
+│   └── segmentation.py
 │
 ├── assets/                 
 ├── README.md               
