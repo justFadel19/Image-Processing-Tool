@@ -34,12 +34,12 @@ def show_histogram(image):
     histogram = calculate_histogram(image)
     
     plt.figure(figsize=(10, 5))
-    plt.bar(range(256), histogram, color="gray")
+    plt.bar(range(256), histogram, color="gray") # Create a bar chart
     plt.title("Image Histogram")
     plt.xlabel("Grayscale Value")
     plt.ylabel("Frequency")
-    plt.grid(axis="y")
-    plt.tight_layout()
+    plt.grid(axis="y") # Show gridlines on the y-axis
+    plt.tight_layout() # Adjust the layout to prevent overlap
     plt.show()
 
 def histogram_equalization(image):
@@ -67,7 +67,11 @@ def histogram_equalization(image):
     for i in range(1, 256):
         cdf[i] = cdf[i - 1] + histogram[i]
 
-    # Normalize the CDF
+    # Normalize the CDF to create a lookup table for pixel intensity mapping:
+    # 1. (cdf[i] - cdf_min): Shifts CDF values to start from 0
+    # 2. * 255: Scales to full pixel intensity range (0-255)
+    # 3. // (cdf_max - cdf_min): Normalizes by the CDF range
+    # This creates a mapping where index = input pixel value, value = equalized output pixel value
     cdf_min = min(cdf)
     cdf_max = max(cdf)
     cdf_normalized = [(cdf[i] - cdf_min) * 255 // (cdf_max - cdf_min) for i in range(256)]

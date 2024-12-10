@@ -64,10 +64,12 @@ def peak_segmentation(image):
     histogram = calculate_histogram(image)
     peaks = []
 
+    # find peaks
     for i in range(1, 255):
         if histogram[i-1] < histogram[i] > histogram[i+1]:
             peaks.append(i)
     
+    # avg image intensity if peaks less than two
     if len(peaks) < 2:
         threshold = sum(sum(image.getpixel((x, y)) for x in range(image.width)) for y in range(image.height)) // (image.width * image.height)
     else:
@@ -93,10 +95,12 @@ def valley_segmentation(image):
     histogram = calculate_histogram(image)
     valleys = []
 
+    # find valleys
     for i in range(1, 255):
         if histogram[i-1] > histogram[i] < histogram[i+1]:
             valleys.append(i)
     
+    # use the deepest valley as threshold
     if not valleys:
         threshold = sum(sum(image.getpixel((x, y)) for x in range(image.width)) for y in range(image.height)) // (image.width * image.height)
     else:

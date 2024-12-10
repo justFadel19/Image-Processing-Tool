@@ -23,17 +23,5 @@ def calculate_threshold(image):
     threshold = sum(pixel_values) // len(pixel_values)
     print(f"Calculated Threshold: {threshold}")
     
-    
-    # Create a new image for the thresholded result
-    threshold_img = Image.new("L", (width, height))
-
-    # Apply thresholding
-    for x in range(width):
-        for y in range(height):
-            gray = image.getpixel((x, y))
-            # Set pixel to 255 (white) if greater than threshold, else 0 (black)
-            value = 255 if gray > threshold else 0
-            threshold_img.putpixel((x, y), value)
-    
     # Return the original image and the calculated threshold
     return image
